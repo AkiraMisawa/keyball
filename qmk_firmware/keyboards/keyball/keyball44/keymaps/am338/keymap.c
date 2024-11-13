@@ -287,18 +287,6 @@ layer_state_t layer_state_set_user(layer_state_t state)
   keyball_set_scroll_mode(get_highest_layer(state) == 3);
   // keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
 
-  // レイヤーとLEDを連動させる
-  uint8_t layer = biton32(state);
-  switch (layer)
-  {
-  case 6:
-    rgblight_sethsv(HSV_WHITE);
-    break;
-
-  default:
-    rgblight_sethsv(HSV_OFF);
-  }
-
   return state;
 }
 
