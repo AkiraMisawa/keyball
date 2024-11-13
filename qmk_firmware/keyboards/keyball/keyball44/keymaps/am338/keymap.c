@@ -40,7 +40,7 @@ enum click_state
 enum click_state state;
 uint16_t click_timer;
 
-uint16_t to_reset_timer = 800;
+uint16_t to_reset_time = 800;
 
 const int16_t to_clickable_movement = 0;
 const uint16_t click_layer = 6;
