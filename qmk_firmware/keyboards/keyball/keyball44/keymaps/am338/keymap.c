@@ -17,46 +17,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include QMK_KEYBOARD_H
-
 #include "quantum.h"
 
-#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-void pointing_device_init_user(void)
-{
-  set_auto_mouse_enable(true);
-}
-#endif
+// コード表
+// 【KBC_RST: 0x5DA5】Keyball 設定のリセット
+// 【KBC_SAVE: 0x5DA6】現在の Keyball 設定を EEPROM に保存します
+// 【CPI_I100: 0x5DA7】CPI を 100 増加させます(最大:12000)
+// 【CPI_D100: 0x5DA8】CPI を 100 減少させます(最小:100)
+// 【CPI_I1K: 0x5DA9】CPI を 1000 増加させます(最大:12000)
+// 【CPI_D1K: 0x5DAA】CPI を 1000 減少させます(最小:100)
+// 【SCRL_TO: 0x5DAB】タップごとにスクロールモードの ON/OFF を切り替えます
+// 【SCRL_MO: 0x5DAC】キーを押している間、スクロールモードになります
+// 【SCRL_DVI: 0x5DAD】スクロール除数を１つ上げます(max D7 = 1/128)← 最もスクロール遅い
+// 【SCRL_DVD: 0x5DAE】スクロール除数を１つ下げます(min D0 = 1/1)← 最もスクロール速い
+
+////////////////////////////////////
+///
+/// 自動マウスレイヤーの実装 ここから
+/// 参考にさせていただいたページ
+/// https://zenn.dev/takashicompany/articles/69b87160cda4b9
+///
+////////////////////////////////////
 
 enum custom_keycodes
 {
-  KC_MY_BTN1 = KEYBALL_SAFE_RANGE,
-  KC_MY_BTN2,
-  KC_MY_BTN3,
-  KC_MY_BTN4,
-  KC_MY_BTN5,
+  KC_MY_BTN1 = KEYBALL_SAFE_RANGE, // Remap上では 0x5DAF
+  KC_MY_BTN2,                      // Remap上では 0x5DB0
+  KC_MY_BTN3                       // Remap上では 0x5DB1
 };
 
 enum click_state
 {
   NONE = 0,
-  WAITING,
-  CLICKABLE,
-  CLICKING,
+  WAITING,   // マウスレイヤーが有効になるのを待つ。 Wait for mouse layer to activate.
+  CLICKABLE, // マウスレイヤー有効になりクリック入力が取れる。 Mouse layer is enabled to take click input.
+  CLICKING,  // クリック中。 Clicking.
 };
 
-enum click_state state;
-uint16_t click_timer;
+enum click_state state; // 現在のクリック入力受付の状態 Current click input reception status
+uint16_t click_timer;   // タイマー。状態に応じて時間で判定する。 Timer. Time to determine the state of the system.
 
-uint16_t to_reset_time = 800;
+uint16_t to_reset_time = 800; // この秒数(千分の一秒)、CLICKABLE状態ならクリックレイヤーが無効になる。 For this number of seconds (milliseconds), the click layer is disabled if in CLICKABLE state.
 
-const int16_t to_clickable_movement = 0;
-const uint16_t click_layer = 4;
+const int16_t to_clickable_movement = 0; // クリックレイヤーが有効になるしきい値
+const uint16_t click_layer = 6;          // マウス入力が可能になった際に有効になるレイヤー。Layers enabled when mouse input is enabled
 
-int16_t mouse_record_threshold = 30;
-int16_t mouse_move_count_ration = 5;
+int16_t mouse_record_threshold = 30; // ポインターの動きを一時的に記録するフレーム数。 Number of frames in which the pointer movement is temporarily recorded.
+int16_t mouse_move_count_ratio = 5;  // ポインターの動きを再生する際の移動フレームの係数。 The coefficient of the moving frame when replaying the pointer movement.
 
 int16_t mouse_movement;
 
+// クリック用のレイヤーを有効にする。　Enable layers for clicks
 void enable_click_layer(void)
 {
   layer_on(click_layer);
@@ -64,12 +75,14 @@ void enable_click_layer(void)
   state = CLICKABLE;
 }
 
+// クリック用のレイヤーを無効にする。 Disable layers for clicks.
 void disable_click_layer(void)
 {
   state = NONE;
   layer_off(click_layer);
 }
 
+// 自前の絶対数を返す関数。 Functions that return absolute numbers.
 int16_t my_abs(int16_t num)
 {
   if (num < 0)
@@ -80,6 +93,7 @@ int16_t my_abs(int16_t num)
   return num;
 }
 
+// 自前の符号を返す関数。 Function to return the sign.
 int16_t mmouse_move_y_sign(int16_t num)
 {
   if (num < 0)
@@ -90,6 +104,7 @@ int16_t mmouse_move_y_sign(int16_t num)
   return 1;
 }
 
+// 現在クリックが可能な状態か。 Is it currently clickable?
 bool is_clickable_mode(void)
 {
   return state == CLICKABLE || state == CLICKING;
@@ -103,20 +118,23 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
   case KC_MY_BTN1:
   case KC_MY_BTN2:
   case KC_MY_BTN3:
-  case KC_MY_BTN4:
-  case KC_MY_BTN5:
   {
     report_mouse_t currentReport = pointing_device_get_report();
 
+    // どこのビットを対象にするか。 Which bits are to be targeted?
     uint8_t btn = 1 << (keycode - KC_MY_BTN1);
 
     if (record->event.pressed)
     {
+      // ビットORは演算子の左辺と右辺の同じ位置にあるビットを比較して、両方のビットのどちらかが「1」の場合に「1」にします。
+      // Bit OR compares bits in the same position on the left and right sides of the operator and sets them to "1" if either of both bits is "1".
       currentReport.buttons |= btn;
       state = CLICKING;
     }
     else
     {
+      // ビットANDは演算子の左辺と右辺の同じ位置にあるビットを比較して、両方のビットが共に「1」の場合だけ「1」にします。
+      // Bit AND compares the bits in the same position on the left and right sides of the operator and sets them to "1" only if both bits are "1" together.
       currentReport.buttons &= ~btn;
       enable_click_layer();
     }
@@ -203,20 +221,26 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   return mouse_report;
 }
 
+////////////////////////////////////
+///
+/// 自動マウスレイヤーの実装 ここまで
+///
+////////////////////////////////////
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-  // keymap for default (VIA)
+  // keymap for default
   [0] = LAYOUT_universal(
     KC_ESC   , KC_Q     , KC_W     , KC_E     , KC_R     , KC_T     ,                                        KC_Y     , KC_U     , KC_I     , KC_O     , KC_P     , KC_DEL   ,
     KC_TAB   , KC_A     , KC_S     , KC_D     , KC_F     , KC_G     ,                                        KC_H     , KC_J     , KC_K     , KC_L     , KC_SCLN  , S(KC_7)  ,
     KC_LSFT  , KC_Z     , KC_X     , KC_C     , KC_V     , KC_B     ,                                        KC_N     , KC_M     , KC_COMM  , KC_DOT   , KC_SLSH  , KC_INT1  ,
-              KC_LALT,KC_LGUI,LCTL_T(KC_LNG2)     ,LT(1,KC_SPC),LT(3,KC_LNG1),                  KC_BSPC,LT(2,KC_ENT), RCTL_T(KC_LNG2),     KC_RALT  , KC_PSCR
+              KC_LALT,KC_LGUI,LCTL_T(KC_LANG2)     ,LT(1,KC_SPC),LT(3,KC_LANG1),                  KC_BSPC,LT(2,KC_ENT), RCTL_T(KC_LANG2),     KC_RALT  , KC_PSCR
   ),
 
   [1] = LAYOUT_universal(
-    SSNP_FRE ,  KC_F1   , KC_F2    , KC_F3   , KC_F4    , KC_F5    ,                                         KC_F6    , KC_F7    , KC_F8    , KC_F9    , KC_F10   , KC_F11   ,
-    SSNP_VRT ,  _______ , _______  , KC_UP   , KC_ENT   , KC_DEL   ,                                         KC_PGUP  , KC_BTN1  , KC_UP    , KC_BTN2  , KC_BTN3  , KC_F12   ,
-    SSNP_HOR ,  _______ , KC_LEFT  , KC_DOWN , KC_RGHT  , KC_BSPC  ,                                         KC_PGDN  , KC_LEFT  , KC_DOWN  , KC_RGHT  , _______  , _______  ,
+    _______  ,  KC_F1   , KC_F2    , KC_F3   , KC_F4    , KC_F5    ,                                         KC_F6    , KC_F7    , KC_F8    , KC_F9    , KC_F10   , KC_F11   ,
+    _______  ,  _______ , _______  , KC_UP   , KC_ENT   , KC_DEL   ,                                         KC_PGUP  , KC_BTN1  , KC_UP    , KC_BTN2  , KC_BTN3  , KC_F12   ,
+    _______  ,  _______ , KC_LEFT  , KC_DOWN , KC_RGHT  , KC_BSPC  ,                                         KC_PGDN  , KC_LEFT  , KC_DOWN  , KC_RGHT  , _______  , _______  ,
                   _______  , _______ , _______  ,         _______  , _______  ,                   _______  , _______  , _______       , _______  , _______
   ),
 
@@ -228,47 +252,66 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [3] = LAYOUT_universal(
-    RGB_TOG  , AML_TO   , AML_I50  , AML_D50  , _______  , _______  ,                                        RGB_M_P  , RGB_M_B  , RGB_M_R  , RGB_M_SW , RGB_M_SN , RGB_M_K  ,
+    RGB_TOG  , _______  , _______  , _______  , _______  , _______  ,                                        RGB_M_P  , RGB_M_B  , RGB_M_R  , RGB_M_SW , RGB_M_SN , RGB_M_K  ,
     RGB_MOD  , RGB_HUI  , RGB_SAI  , RGB_VAI  , _______  , SCRL_DVI ,                                        RGB_M_X  , RGB_M_G  , RGB_M_T  , RGB_M_TW , _______  , _______  ,
     RGB_RMOD , RGB_HUD  , RGB_SAD  , RGB_VAD  , _______  , SCRL_DVD ,                                        CPI_D1K  , CPI_D100 , CPI_I100 , CPI_I1K  , _______  , KBC_SAVE ,
-                  QK_BOOT  , KBC_RST  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , KBC_RST  , QK_BOOT
+                  RESET    , KBC_RST  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , KBC_RST  , RESET
   ),
 
   [4] = LAYOUT_universal(
     _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,                                        KC_MY_BTN4,KC_MY_BTN1,KC_MY_BTN3,KC_MY_BTN2,KC_MY_BTN5, _______  ,
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+                  _______  , _______  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , _______  , _______
+  ),
+
+  [5] = LAYOUT_universal(
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+                  _______  , _______  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , _______  , _______
+  ),
+
+  [6] = LAYOUT_universal(
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
+    _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  ,KC_MY_BTN1, _______  ,KC_MY_BTN2, _______  , _______  ,
     _______  , _______  , _______  , _______  , _______  , _______  ,                                        _______  , _______  , _______  , _______  , _______  , _______  ,
                   _______  , _______  , _______  ,        _______  , _______  ,                   _______  , _______  , _______       , _______  , _______
   )
 };
 // clang-format on
 
-layer_state_t layer_state_set_user(layer_state_t state) {
-    // Auto enable scroll mode when the highest layer is 3
-    keyball_set_scroll_mode(get_highest_layer(state) == 3);
+layer_state_t layer_state_set_user(layer_state_t state)
+{
+  // レイヤーが1または3の場合、スクロールモードが有効になる
+  keyball_set_scroll_mode(get_highest_layer(state) == 3);
+  // keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
 
-    #ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
-    switch(get_highest_layer(remove_auto_mouse_layer(state, true))) {
-        case 1:
-            state = remove_auto_mouse_layer(state, false);
-            set_auto_mouse_enable(false);
-            break;
-        default:
-            set_auto_mouse_enable(true);
-            break;
-    }
-    #endif
+  // レイヤーとLEDを連動させる
+  uint8_t layer = biton32(state);
+  switch (layer)
+  {
+  case 6:
+    rgblight_sethsv(HSV_WHITE);
+    break;
 
-    return state;
+  default:
+    rgblight_sethsv(HSV_OFF);
+  }
+
+  return state;
 }
 
 #ifdef OLED_ENABLE
 
-#    include "lib/oledkit/oledkit.h"
+#include "lib/oledkit/oledkit.h"
 
-void oledkit_render_info_user(void) {
-    keyball_oled_render_keyinfo();
-    keyball_oled_render_ballinfo();
-    keyball_oled_render_layerinfo();
+void oledkit_render_info_user(void)
+{
+  keyball_oled_render_keyinfo();
+  keyball_oled_render_ballinfo();
+
+  oled_write_P(PSTR("Layer:"), false);
+  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
 }
 #endif
