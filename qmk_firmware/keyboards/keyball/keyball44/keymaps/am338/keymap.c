@@ -43,7 +43,7 @@ uint16_t click_timer;
 uint16_t to_reset_time = 800;
 
 const int16_t to_clickable_movement = 0;
-const uint16_t click_layer = 6;
+const uint16_t click_layer = 4;
 
 int16_t mouse_record_threshold = 30;
 int16_t mouse_move_count_ration = 5;
