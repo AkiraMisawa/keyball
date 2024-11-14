@@ -152,7 +152,6 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 bool process_record_user(uint16_t keycode, keyrecord_t *record)
 {
   bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  current_keycode = keycode;
   bool mod_pressed = (get_mods() != 0);
 
   static bool is_gui_active = false;
