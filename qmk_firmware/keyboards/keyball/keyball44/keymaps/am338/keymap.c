@@ -70,6 +70,16 @@ void disable_click_layer(void)
   layer_off(click_layer);
 }
 
+int16_t my_abs(int16_t num)
+{
+  if (num < 0)
+  {
+    num = -num;
+  }
+
+  return num;
+}
+
 report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 {
   int16_t current_x = mouse_report.x;
@@ -137,31 +147,6 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   mouse_report.y = current_y;
 
   return mouse_report;
-}
-
-int16_t my_abs(int16_t num)
-{
-  if (num < 0)
-  {
-    num = -num;
-  }
-
-  return num;
-}
-
-int16_t mmouse_move_y_sign(int16_t num)
-{
-  if (num < 0)
-  {
-    return -1;
-  }
-
-  return 1;
-}
-
-bool is_clickable_mode(void)
-{
-  return state == CLICKABLE || state == CLICKING;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record)
