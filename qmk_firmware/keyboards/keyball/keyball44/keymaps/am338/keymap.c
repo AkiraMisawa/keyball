@@ -192,12 +192,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       return true;
     }
 
-    case LT(1, KC_LANG2):
+    case LT(1, KC_LNG2):
       if (record->event.pressed)
       {
         click_timer = timer_read();
         is_lt1_pressed = true;
-        if (keycode == LT(1, KC_LANG2))
+        if (keycode == LT(1, KC_LNG2))
         {
           is_lt1_lang2_pressed = true;
         }
@@ -216,7 +216,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       else
       {
         is_lt1_pressed = false;
-        if (keycode == LT(1, KC_LANG2))
+        if (keycode == LT(1, KC_LNG2))
         {
           is_lt1_lang2_pressed = false;
         }
@@ -236,9 +236,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
         if (timer_elapsed(click_timer) < TAPPING_TERM)
         {
-          if (keycode == LT(1, KC_LANG2))
+          if (keycode == LT(1, KC_LNG2))
           {
-            tap_code(KC_LANG2);
+            tap_code(KC_LNG2);
             is_kana = false;
           }
         }
