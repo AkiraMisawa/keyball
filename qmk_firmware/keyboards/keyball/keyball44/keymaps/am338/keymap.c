@@ -19,18 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include QMK_KEYBOARD_H
 #include "quantum.h"
 
-// コード表
-// 【KBC_RST: 0x5DA5】Keyball 設定のリセット
-// 【KBC_SAVE: 0x5DA6】現在の Keyball 設定を EEPROM に保存します
-// 【CPI_I100: 0x5DA7】CPI を 100 増加させます(最大:12000)
-// 【CPI_D100: 0x5DA8】CPI を 100 減少させます(最小:100)
-// 【CPI_I1K: 0x5DA9】CPI を 1000 増加させます(最大:12000)
-// 【CPI_D1K: 0x5DAA】CPI を 1000 減少させます(最小:100)
-// 【SCRL_TO: 0x5DAB】タップごとにスクロールモードの ON/OFF を切り替えます
-// 【SCRL_MO: 0x5DAC】キーを押している間、スクロールモードになります
-// 【SCRL_DVI: 0x5DAD】スクロール除数を１つ上げます(max D7 = 1/128)← 最もスクロール遅い
-// 【SCRL_DVD: 0x5DAE】スクロール除数を１つ下げます(min D0 = 1/1)← 最もスクロール速い
-
 enum custom_keycodes
 {
   KC_MY_BTN1 = KEYBALL_SAFE_RANGE,
@@ -41,7 +29,6 @@ enum custom_keycodes
   KC_MY_SCR,
   KC_DOUBLE_CLICK_BTN1,
   KC_TRIPLE_CLICK_BTN1,
-
 };
 
 enum click_state
@@ -488,8 +475,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [6] = LAYOUT_universal(
-    _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , _______ , _______ , _______ , _______ , _______ ,
-    _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MY_BTN4 , KC_MY_BTN1 , KC_MY_BTN3 , KC_MY_BTN2 , KC_MY_BTN5 ,  ,
+    _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , KC_DOUBLE_CLICK_BTN1 , KC_DOUBLE_CLICK_BTN2 , _______ , _______ , _______ ,
+    _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MY_BTN4 , KC_MY_BTN1 , KC_MY_BTN3 , KC_MY_BTN2 , KC_MY_BTN5 , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , KC_MY_SCR , _______ , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
   )
