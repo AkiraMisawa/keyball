@@ -85,62 +85,65 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   int16_t current_x = mouse_report.x;
   int16_t current_y = mouse_report.y;
 
-  if (current_x != 0 || current_y != 0) {
+  if (current_x != 0 || current_y != 0)
+  {
     switch (state)
     {
-      case WAITING:
-        mouse_movement += my_abs(current_x) + my_abs(current_y);
+    case WAITING:
+      mouse_movement += my_abs(current_x) + my_abs(current_y);
 
-        if (mouse_movement >= to_clickable_movement)
-        {
-          mouse_movement = 0;
-          enable_click_layer();
-        }
-        break;
-
-      case CLICKABLE:
-        click_timer = timer_read();
-        break;
-
-      case CLICKING:
-        break;
-
-      default:
-        click_timer = timer_read();
-        state = WAITING;
+      if (mouse_movement >= to_clickable_movement)
+      {
         mouse_movement = 0;
+        enable_click_layer();
+      }
+      break;
+
+    case CLICKABLE:
+      click_timer = timer_read();
+      break;
+
+    case CLICKING:
+      break;
+
+    default:
+      click_timer = timer_read();
+      state = WAITING;
+      mouse_movement = 0;
     }
-  } else {
+  }
+  else
+  {
     switch (state)
     {
-      case WAITING:
-        if (timer_elapsed(click_timer) > 50)
-        {
-          mouse_movement = 0;
-          state = NONE;
-        }
-        break;
-
-      case CLICKABLE:
-        if (timer_elapsed(click_timer) > clickable_stay_time)
-        {
-          disable_click_layer();
-        }
-        break;
-
-      case CLICKING:
-        break;
-
-      case CLICKED:
-        if (timer_elapsed(click_timer) > clicked_stay_time)
-        {
-          disable_click_layer();
-        }
-        break;
-
-      default:
+    case WAITING:
+      if (timer_elapsed(click_timer) > 50)
+      {
         mouse_movement = 0;
         state = NONE;
+      }
+      break;
+
+    case CLICKABLE:
+      if (timer_elapsed(click_timer) > clickable_stay_time)
+      {
+        disable_click_layer();
+      }
+      break;
+
+    case CLICKING:
+      break;
+
+    case CLICKED:
+      if (timer_elapsed(click_timer) > clicked_stay_time)
+      {
+        disable_click_layer();
+      }
+      break;
+
+    default:
+      mouse_movement = 0;
+      state = NONE;
     }
   }
   mouse_report.x = current_x;
@@ -151,19 +154,21 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record)
 {
-  bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  bool mod_pressed = (get_mods() != 0);
+  bool process_record_user(uint16_t keycode, keyrecord_t * record)
+  {
+    bool mod_pressed = (get_mods() != 0);
 
-  static bool is_gui_active = false;
-  static bool is_ctrl_active = false;
+    static bool is_gui_active = false;
+    static bool is_ctrl_active = false;
 
-  static bool is_lt1_pressed = false;
-  static bool is_lt2_pressed = false;
-  static bool is_lt3_pressed = false;
+    static bool is_lt1_pressed = false;
+    static bool is_lt2_pressed = false;
+    static bool is_lt3_pressed = false;
 
-  static bool is_kana = false;
+    static bool is_kana = false;
 
-  switch (keycode) {
+    switch (keycode)
+    {
     case KC_MS_BTN1:
     case KC_MS_BTN2:
     case KC_MS_BTN3:
@@ -191,6 +196,9 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
     {
       return true;
     }
+
+    static bool is_lt1_lang2_pressed = false;
+    static bool is_lt1_lang1_pressed = false;
 
     case LT(1, KC_LNG2):
       if (record->event.pressed)
@@ -342,78 +350,78 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       {
         disable_click_layer();
       }
-  }
-  return true;
-}
-
-report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
-{
-  int16_t current_x = mouse_report.x;
-  int16_t current_y = mouse_report.y;
-
-  if (current_x != 0 || current_y != 0)
-  {
-
-    switch (state)
-    {
-    case CLICKABLE:
-      click_timer = timer_read();
-      break;
-
-    case CLICKING:
-      break;
-
-    case WAITING:
-      mouse_movement += my_abs(current_x) + my_abs(current_y);
-
-      if (mouse_movement >= to_clickable_movement)
-      {
-        mouse_movement = 0;
-        enable_click_layer();
-      }
-      break;
-
-    default:
-      click_timer = timer_read();
-      state = WAITING;
-      mouse_movement = 0;
     }
+    return true;
   }
-  else
+
+  report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   {
-    switch (state)
+    int16_t current_x = mouse_report.x;
+    int16_t current_y = mouse_report.y;
+
+    if (current_x != 0 || current_y != 0)
     {
-    case CLICKING:
-      break;
 
-    case CLICKABLE:
-      if (timer_elapsed(click_timer) > to_reset_time)
+      switch (state)
       {
-        disable_click_layer();
+      case CLICKABLE:
+        click_timer = timer_read();
+        break;
+
+      case CLICKING:
+        break;
+
+      case WAITING:
+        mouse_movement += my_abs(current_x) + my_abs(current_y);
+
+        if (mouse_movement >= to_clickable_movement)
+        {
+          mouse_movement = 0;
+          enable_click_layer();
+        }
+        break;
+
+      default:
+        click_timer = timer_read();
+        state = WAITING;
+        mouse_movement = 0;
       }
-      break;
-
-    case WAITING:
-      if (timer_elapsed(click_timer) > 50)
+    }
+    else
+    {
+      switch (state)
       {
+      case CLICKING:
+        break;
+
+      case CLICKABLE:
+        if (timer_elapsed(click_timer) > to_reset_time)
+        {
+          disable_click_layer();
+        }
+        break;
+
+      case WAITING:
+        if (timer_elapsed(click_timer) > 50)
+        {
+          mouse_movement = 0;
+          state = NONE;
+        }
+        break;
+
+      default:
         mouse_movement = 0;
         state = NONE;
       }
-      break;
-
-    default:
-      mouse_movement = 0;
-      state = NONE;
     }
+
+    mouse_report.x = current_x;
+    mouse_report.y = current_y;
+
+    return mouse_report;
   }
 
-  mouse_report.x = current_x;
-  mouse_report.y = current_y;
-
-  return mouse_report;
-}
-
-// clang-format off
+  // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // keymap for default
   [0] = LAYOUT_universal(
@@ -465,28 +473,29 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
   )
 };
-// clang-format on
+  // clang-format on
 
-layer_state_t layer_state_set_user(layer_state_t state)
-{
-  keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
+  layer_state_t layer_state_set_user(layer_state_t state)
+  {
+    keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
 
-  return state;
-}
+    return state;
+  }
 
 #ifdef OLED_ENABLE
 
 #include "lib/oledkit/oledkit.h"
 
-void oledkit_render_info_user(void)
-{
-  keyball_oled_render_keyinfo();   // キー情報を表示
-  keyball_oled_render_ballinfo();  // トラックボール情報を表示
+  void oledkit_render_info_user(void)
+  {
+    keyball_oled_render_keyinfo();  // キー情報を表示
+    keyball_oled_render_ballinfo(); // トラックボール情報を表示
 
-  oled_write_P(PSTR("Layer:"), false);
-  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
+    oled_write_P(PSTR("Layer:"), false);
+    oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
 
-  switch (state) {
+    switch (state)
+    {
     case WAITING:
       oled_write_ln_P(PSTR("  WAITING"), false);
       break;
@@ -502,7 +511,7 @@ void oledkit_render_info_user(void)
     case NONE:
       oled_write_ln_P(PSTR("  NONE"), false);
       break;
+    }
   }
-}
 
 #endif
