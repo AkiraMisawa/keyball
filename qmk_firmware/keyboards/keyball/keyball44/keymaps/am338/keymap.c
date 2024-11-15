@@ -52,6 +52,12 @@ uint16_t clickable_stay_time = 1400;
 const int16_t to_clickable_movement = 0;
 const uint16_t click_layer = 6;
 
+int16_t scroll_v_mouse_interval_counter;
+int16_t scroll_h_mouse_interval_counter;
+
+int16_t scroll_v_threshold = 50;
+int16_t scroll_h_threshold = 50;
+
 int16_t mouse_record_threshold = 30;
 int16_t mouse_move_count_ratio = 5;
 
