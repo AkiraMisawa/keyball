@@ -160,316 +160,314 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record)
 {
-  bool process_record_user(uint16_t keycode, keyrecord_t * record)
+  static bool is_gui_active = false;
+  static bool is_ctrl_active = false;
+
+  static bool is_lt1_pressed = false;
+  static bool is_lt2_pressed = false;
+  static bool is_lt3_pressed = false;
+
+  switch (keycode)
   {
-    static bool is_gui_active = false;
-    static bool is_ctrl_active = false;
-
-    static bool is_lt1_pressed = false;
-    static bool is_lt2_pressed = false;
-    static bool is_lt3_pressed = false;
-
-    switch (keycode)
+  case KC_MS_BTN1:
+  case KC_MS_BTN2:
+  case KC_MS_BTN3:
+  case KC_MS_BTN4:
+  case KC_MS_BTN5:
+  {
+    if (click_layer && get_highest_layer(layer_state) == click_layer)
     {
-    case KC_MS_BTN1:
-    case KC_MS_BTN2:
-    case KC_MS_BTN3:
-    case KC_MS_BTN4:
-    case KC_MS_BTN5:
-    {
-      if (click_layer && get_highest_layer(layer_state) == click_layer)
-      {
-        if (record->event.pressed)
-        {
-          state = CLICKING;
-        }
-        else
-        {
-          enable_click_layer();
-          state = CLICKED;
-        }
-      }
-      return true;
-    }
-
-    case KC_LALT:
-    case KC_LSFT:
-    case KC_LCTL:
-    {
-      return true;
-    }
-
-      static bool is_lt1_lang2_pressed = false;
-      static bool is_lt1_lang1_pressed = false;
-
-    case LT(1, KC_LNG2):
       if (record->event.pressed)
       {
-        click_timer = timer_read();
-        is_lt1_pressed = true;
-        if (keycode == LT(1, KC_LNG2))
-        {
-          is_lt1_lang2_pressed = true;
-        }
-        layer_on(1);
-        disable_click_layer();
-
-        if (is_lt2_pressed)
-        {
-          layer_off(2);
-        }
-        else if (is_lt3_pressed)
-        {
-          layer_off(3);
-        }
+        state = CLICKING;
       }
       else
       {
-        is_lt1_pressed = false;
-        if (keycode == LT(1, KC_LNG2))
-        {
-          is_lt1_lang2_pressed = false;
-        }
-
-        if (!is_lt1_lang2_pressed && !is_lt1_lang1_pressed)
-        {
-          layer_off(1);
-        }
-        if (is_lt2_pressed)
-        {
-          layer_on(2);
-        }
-        else if (is_lt3_pressed)
-        {
-          layer_on(3);
-        }
-
-        if (is_gui_active)
-        {
-          unregister_code(KC_LGUI);
-          is_gui_active = false;
-        }
-      }
-      return false;
-
-    case LT(2, KC_SPC):
-      if (record->event.pressed)
-      {
-        click_timer = timer_read();
-        is_lt2_pressed = true;
-        layer_on(2);
-        disable_click_layer();
-
-        if (is_lt1_pressed)
-        {
-          layer_off(1);
-        }
-        else if (is_lt3_pressed)
-        {
-          layer_off(3);
-        }
-      }
-      else
-      {
-        is_lt2_pressed = false;
-        layer_off(2);
-
-        if (is_lt1_pressed)
-        {
-          layer_on(1);
-        }
-        else if (is_lt3_pressed)
-        {
-          layer_on(3);
-        }
-
-        if (timer_elapsed(click_timer) < TAPPING_TERM)
-        {
-          if (keycode == LT(2, KC_SPC))
-          {
-            tap_code(KC_V);
-          }
-        }
-      }
-      return false;
-
-    case LT(3, KC_ESC):
-    case LT(3, KC_F):
-      if (record->event.pressed)
-      {
-        click_timer = timer_read();
-        is_lt3_pressed = true;
-        layer_on(3);
-        disable_click_layer();
-
-        if (is_lt1_pressed)
-        {
-          layer_off(1);
-        }
-        else if (is_lt2_pressed)
-        {
-          layer_off(2);
-        }
-      }
-      else
-      {
-        is_lt3_pressed = false;
-        layer_off(3);
-
-        if (is_lt1_pressed)
-        {
-          layer_on(1);
-        }
-        else if (is_lt2_pressed)
-        {
-          layer_on(2);
-        }
-
-        if (timer_elapsed(click_timer) < TAPPING_TERM)
-        {
-          tap_code(KC_ESC);
-        }
-
-        if (is_ctrl_active)
-        {
-          unregister_code(KC_LCTL);
-          is_ctrl_active = false;
-        }
-      }
-      return false;
-
-    default:
-      if (record->event.pressed)
-      {
-        disable_click_layer();
+        enable_click_layer();
+        state = CLICKED;
       }
     }
     return true;
   }
 
-  report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
+  case KC_LALT:
+  case KC_LSFT:
+  case KC_LCTL:
   {
-    int16_t current_x = mouse_report.x;
-    int16_t current_y = mouse_report.y;
-    int16_t current_h = 0;
-    int16_t current_v = 0;
+    return true;
+  }
 
-    if (current_x != 0 || current_y != 0)
+    static bool is_lt1_lang2_pressed = false;
+    static bool is_lt1_lang1_pressed = false;
+
+  case LT(1, KC_LNG2):
+    if (record->event.pressed)
     {
-
-      switch (state)
+      click_timer = timer_read();
+      is_lt1_pressed = true;
+      if (keycode == LT(1, KC_LNG2))
       {
-      case CLICKABLE:
-        click_timer = timer_read();
-        break;
-
-      case CLICKING:
-        break;
-
-      case SCROLLING:
-      {
-        int8_t rep_v = 0;
-        int8_t rep_h = 0;
-
-        // 垂直スクロールの方の感度を高める。 Increase sensitivity toward vertical scrolling.
-        if (my_abs(current_y) * 2 > my_abs(current_x))
-        {
-
-          scroll_v_mouse_interval_counter += current_y;
-          while (my_abs(scroll_v_mouse_interval_counter) > scroll_v_threshold)
-          {
-            if (scroll_v_mouse_interval_counter < 0)
-            {
-              scroll_v_mouse_interval_counter += scroll_v_threshold;
-              rep_v += scroll_v_threshold;
-            }
-            else
-            {
-              scroll_v_mouse_interval_counter -= scroll_v_threshold;
-              rep_v -= scroll_v_threshold;
-            }
-          }
-        }
-        else
-        {
-
-          scroll_h_mouse_interval_counter += current_x;
-
-          while (my_abs(scroll_h_mouse_interval_counter) > scroll_h_threshold)
-          {
-            if (scroll_h_mouse_interval_counter < 0)
-            {
-              scroll_h_mouse_interval_counter += scroll_h_threshold;
-              rep_h += scroll_h_threshold;
-            }
-            else
-            {
-              scroll_h_mouse_interval_counter -= scroll_h_threshold;
-              rep_h -= scroll_h_threshold;
-            }
-          }
-        }
-
-        current_h = rep_h / scroll_h_threshold;
-        current_v = -rep_v / scroll_v_threshold;
-        current_x = 0;
-        current_y = 0;
+        is_lt1_lang2_pressed = true;
       }
+      layer_on(1);
+      disable_click_layer();
 
-      case WAITING:
-        mouse_movement += my_abs(current_x) + my_abs(current_y);
-
-        if (mouse_movement >= to_clickable_movement)
-        {
-          mouse_movement = 0;
-          enable_click_layer();
-        }
-        break;
-
-      default:
-        click_timer = timer_read();
-        state = WAITING;
-        mouse_movement = 0;
+      if (is_lt2_pressed)
+      {
+        layer_off(2);
+      }
+      else if (is_lt3_pressed)
+      {
+        layer_off(3);
       }
     }
     else
     {
-      switch (state)
+      is_lt1_pressed = false;
+      if (keycode == LT(1, KC_LNG2))
       {
-      case CLICKING:
-      case SCROLLING:
-        break;
+        is_lt1_lang2_pressed = false;
+      }
 
-      case CLICKABLE:
-        if (timer_elapsed(click_timer) > to_reset_time)
+      if (!is_lt1_lang2_pressed && !is_lt1_lang1_pressed)
+      {
+        layer_off(1);
+      }
+      if (is_lt2_pressed)
+      {
+        layer_on(2);
+      }
+      else if (is_lt3_pressed)
+      {
+        layer_on(3);
+      }
+
+      if (is_gui_active)
+      {
+        unregister_code(KC_LGUI);
+        is_gui_active = false;
+      }
+    }
+    return false;
+
+  case LT(2, KC_SPC):
+    if (record->event.pressed)
+    {
+      click_timer = timer_read();
+      is_lt2_pressed = true;
+      layer_on(2);
+      disable_click_layer();
+
+      if (is_lt1_pressed)
+      {
+        layer_off(1);
+      }
+      else if (is_lt3_pressed)
+      {
+        layer_off(3);
+      }
+    }
+    else
+    {
+      is_lt2_pressed = false;
+      layer_off(2);
+
+      if (is_lt1_pressed)
+      {
+        layer_on(1);
+      }
+      else if (is_lt3_pressed)
+      {
+        layer_on(3);
+      }
+
+      if (timer_elapsed(click_timer) < TAPPING_TERM)
+      {
+        if (keycode == LT(2, KC_SPC))
         {
-          disable_click_layer();
+          tap_code(KC_V);
         }
-        break;
+      }
+    }
+    return false;
 
-      case WAITING:
-        if (timer_elapsed(click_timer) > 50)
+  case LT(3, KC_ESC):
+  case LT(3, KC_F):
+    if (record->event.pressed)
+    {
+      click_timer = timer_read();
+      is_lt3_pressed = true;
+      layer_on(3);
+      disable_click_layer();
+
+      if (is_lt1_pressed)
+      {
+        layer_off(1);
+      }
+      else if (is_lt2_pressed)
+      {
+        layer_off(2);
+      }
+    }
+    else
+    {
+      is_lt3_pressed = false;
+      layer_off(3);
+
+      if (is_lt1_pressed)
+      {
+        layer_on(1);
+      }
+      else if (is_lt2_pressed)
+      {
+        layer_on(2);
+      }
+
+      if (timer_elapsed(click_timer) < TAPPING_TERM)
+      {
+        tap_code(KC_ESC);
+      }
+
+      if (is_ctrl_active)
+      {
+        unregister_code(KC_LCTL);
+        is_ctrl_active = false;
+      }
+    }
+    return false;
+
+  default:
+    if (record->event.pressed)
+    {
+      disable_click_layer();
+    }
+  }
+  return true;
+}
+
+report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
+{
+  int16_t current_x = mouse_report.x;
+  int16_t current_y = mouse_report.y;
+  int16_t current_h = 0;
+  int16_t current_v = 0;
+
+  if (current_x != 0 || current_y != 0)
+  {
+
+    switch (state)
+    {
+    case CLICKABLE:
+      click_timer = timer_read();
+      break;
+
+    case CLICKING:
+      break;
+
+    case SCROLLING:
+    {
+      int8_t rep_v = 0;
+      int8_t rep_h = 0;
+
+      // 垂直スクロールの方の感度を高める。 Increase sensitivity toward vertical scrolling.
+      if (my_abs(current_y) * 2 > my_abs(current_x))
+      {
+
+        scroll_v_mouse_interval_counter += current_y;
+        while (my_abs(scroll_v_mouse_interval_counter) > scroll_v_threshold)
         {
-          mouse_movement = 0;
-          state = NONE;
+          if (scroll_v_mouse_interval_counter < 0)
+          {
+            scroll_v_mouse_interval_counter += scroll_v_threshold;
+            rep_v += scroll_v_threshold;
+          }
+          else
+          {
+            scroll_v_mouse_interval_counter -= scroll_v_threshold;
+            rep_v -= scroll_v_threshold;
+          }
         }
-        break;
+      }
+      else
+      {
 
-      default:
+        scroll_h_mouse_interval_counter += current_x;
+
+        while (my_abs(scroll_h_mouse_interval_counter) > scroll_h_threshold)
+        {
+          if (scroll_h_mouse_interval_counter < 0)
+          {
+            scroll_h_mouse_interval_counter += scroll_h_threshold;
+            rep_h += scroll_h_threshold;
+          }
+          else
+          {
+            scroll_h_mouse_interval_counter -= scroll_h_threshold;
+            rep_h -= scroll_h_threshold;
+          }
+        }
+      }
+
+      current_h = rep_h / scroll_h_threshold;
+      current_v = -rep_v / scroll_v_threshold;
+      current_x = 0;
+      current_y = 0;
+    }
+
+    case WAITING:
+      mouse_movement += my_abs(current_x) + my_abs(current_y);
+
+      if (mouse_movement >= to_clickable_movement)
+      {
+        mouse_movement = 0;
+        enable_click_layer();
+      }
+      break;
+
+    default:
+      click_timer = timer_read();
+      state = WAITING;
+      mouse_movement = 0;
+    }
+  }
+  else
+  {
+    switch (state)
+    {
+    case CLICKING:
+    case SCROLLING:
+      break;
+
+    case CLICKABLE:
+      if (timer_elapsed(click_timer) > to_reset_time)
+      {
+        disable_click_layer();
+      }
+      break;
+
+    case WAITING:
+      if (timer_elapsed(click_timer) > 50)
+      {
         mouse_movement = 0;
         state = NONE;
       }
+      break;
+
+    default:
+      mouse_movement = 0;
+      state = NONE;
     }
-
-    mouse_report.x = current_x;
-    mouse_report.y = current_y;
-    mouse_report.h = current_h;
-    mouse_report.v = current_v;
-
-    return mouse_report;
   }
 
-  // clang-format off
+  mouse_report.x = current_x;
+  mouse_report.y = current_y;
+  mouse_report.h = current_h;
+  mouse_report.v = current_v;
+
+  return mouse_report;
+}
+
+// clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // keymap for default
   [0] = LAYOUT_universal(
@@ -521,48 +519,48 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
   )
 };
-  // clang-format on
+// clang-format on
 
-  layer_state_t layer_state_set_user(layer_state_t state)
-  {
-    keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
+layer_state_t layer_state_set_user(layer_state_t state)
+{
+  keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
 
-    return state;
-  }
+  return state;
+}
 
 #ifdef OLED_ENABLE
 
 #include "lib/oledkit/oledkit.h"
 
-  void oledkit_render_info_user(void)
+void oledkit_render_info_user(void)
+{
+  keyball_oled_render_keyinfo();  // キー情報を表示
+  keyball_oled_render_ballinfo(); // トラックボール情報を表示
+
+  oled_write_P(PSTR("Layer:"), false);
+  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
+
+  switch (state)
   {
-    keyball_oled_render_keyinfo();  // キー情報を表示
-    keyball_oled_render_ballinfo(); // トラックボール情報を表示
-
-    oled_write_P(PSTR("Layer:"), false);
-    oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
-
-    switch (state)
-    {
-    case WAITING:
-      oled_write_ln_P(PSTR("  WAITING"), false);
-      break;
-    case CLICKABLE:
-      oled_write_ln_P(PSTR("  CLICKABLE"), false);
-      break;
-    case CLICKING:
-      oled_write_ln_P(PSTR("  CLICKING"), false);
-      break;
-    case CLICKED:
-      oled_write_ln_P(PSTR("  CLICKED"), false);
-      break;
-    case SCROLLING:
-      oled_write_ln_P(PSTR("  SCROLLING"), false);
-      break;
-    case NONE:
-      oled_write_ln_P(PSTR("  NONE"), false);
-      break;
-    }
+  case WAITING:
+    oled_write_ln_P(PSTR("  WAITING"), false);
+    break;
+  case CLICKABLE:
+    oled_write_ln_P(PSTR("  CLICKABLE"), false);
+    break;
+  case CLICKING:
+    oled_write_ln_P(PSTR("  CLICKING"), false);
+    break;
+  case CLICKED:
+    oled_write_ln_P(PSTR("  CLICKED"), false);
+    break;
+  case SCROLLING:
+    oled_write_ln_P(PSTR("  SCROLLING"), false);
+    break;
+  case NONE:
+    oled_write_ln_P(PSTR("  NONE"), false);
+    break;
   }
+}
 
 #endif
