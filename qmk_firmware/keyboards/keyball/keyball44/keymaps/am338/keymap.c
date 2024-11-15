@@ -156,16 +156,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 {
   bool process_record_user(uint16_t keycode, keyrecord_t * record)
   {
-    bool mod_pressed = (get_mods() != 0);
-
     static bool is_gui_active = false;
     static bool is_ctrl_active = false;
 
     static bool is_lt1_pressed = false;
     static bool is_lt2_pressed = false;
     static bool is_lt3_pressed = false;
-
-    static bool is_kana = false;
 
     switch (keycode)
     {
@@ -197,8 +193,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       return true;
     }
 
-    static bool is_lt1_lang2_pressed = false;
-    static bool is_lt1_lang1_pressed = false;
+      static bool is_lt1_lang2_pressed = false;
+      static bool is_lt1_lang1_pressed = false;
 
     case LT(1, KC_LNG2):
       if (record->event.pressed)
@@ -240,15 +236,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
         else if (is_lt3_pressed)
         {
           layer_on(3);
-        }
-
-        if (timer_elapsed(click_timer) < TAPPING_TERM)
-        {
-          if (keycode == LT(1, KC_LNG2))
-          {
-            tap_code(KC_LNG2);
-            is_kana = false;
-          }
         }
 
         if (is_gui_active)
@@ -339,7 +326,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
         if (is_ctrl_active)
         {
-          unregister_code(KC_LCTRL);
+          unregister_code(KC_LCTL);
           is_ctrl_active = false;
         }
       }
@@ -371,6 +358,56 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       case CLICKING:
         break;
 
+      case SCROLLING:
+      {
+        int8_t rep_v = 0;
+        int8_t rep_h = 0;
+
+        // 垂直スクロールの方の感度を高める。 Increase sensitivity toward vertical scrolling.
+        if (my_abs(current_y) * 2 > my_abs(current_x))
+        {
+
+          scroll_v_mouse_interval_counter += current_y;
+          while (my_abs(scroll_v_mouse_interval_counter) > scroll_v_threshold)
+          {
+            if (scroll_v_mouse_interval_counter < 0)
+            {
+              scroll_v_mouse_interval_counter += scroll_v_threshold;
+              rep_v += scroll_v_threshold;
+            }
+            else
+            {
+              scroll_v_mouse_interval_counter -= scroll_v_threshold;
+              rep_v -= scroll_v_threshold;
+            }
+          }
+        }
+        else
+        {
+
+          scroll_h_mouse_interval_counter += current_x;
+
+          while (my_abs(scroll_h_mouse_interval_counter) > scroll_h_threshold)
+          {
+            if (scroll_h_mouse_interval_counter < 0)
+            {
+              scroll_h_mouse_interval_counter += scroll_h_threshold;
+              rep_h += scroll_h_threshold;
+            }
+            else
+            {
+              scroll_h_mouse_interval_counter -= scroll_h_threshold;
+              rep_h -= scroll_h_threshold;
+            }
+          }
+        }
+
+        current_h = rep_h / scroll_h_threshold;
+        current_v = -rep_v / scroll_v_threshold;
+        current_x = 0;
+        current_y = 0;
+      }
+
       case WAITING:
         mouse_movement += my_abs(current_x) + my_abs(current_y);
 
@@ -392,6 +429,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       switch (state)
       {
       case CLICKING:
+      case SCROLLING:
         break;
 
       case CLICKABLE:
@@ -467,7 +505,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [6] = LAYOUT_universal(
-    _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , KC_DOUBLE_CLICK_BTN1 , KC_DOUBLE_CLICK_BTN2 , _______ , _______ , _______ ,
+    _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , KC_DOUBLE_CLICK_BTN1 , KC_TRIPLE_CLICK_BTN1 , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MY_BTN4 , KC_MY_BTN1 , KC_MY_BTN3 , KC_MY_BTN2 , KC_MY_BTN5 , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , KC_MY_SCR , _______ , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
@@ -507,6 +545,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
       break;
     case CLICKED:
       oled_write_ln_P(PSTR("  CLICKED"), false);
+      break;
+    case SCROLLING:
+      oled_write_ln_P(PSTR("  SCROLLING"), false);
       break;
     case NONE:
       oled_write_ln_P(PSTR("  NONE"), false);
