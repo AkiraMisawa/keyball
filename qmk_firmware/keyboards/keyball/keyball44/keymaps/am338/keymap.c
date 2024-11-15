@@ -463,6 +463,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
     mouse_report.x = current_x;
     mouse_report.y = current_y;
+    mouse_report.h = current_h;
+    mouse_report.v = current_v;
 
     return mouse_report;
   }
