@@ -26,7 +26,6 @@ enum custom_keycodes
   KC_MY_BTN3,
   KC_MY_BTN4,
   KC_MY_BTN5,
-  KC_MY_SCR,
   KC_DOUBLE_CLICK_BTN1,
   KC_TRIPLE_CLICK_BTN1,
 };
@@ -38,13 +37,10 @@ enum click_state
   CLICKABLE,
   CLICKING,
   CLICKED,
-  SCROLLING
 };
 
 enum click_state state;
 uint16_t click_timer;
-
-uint16_t to_reset_time = 800;
 
 uint16_t clicked_stay_time = 150;
 uint16_t clickable_stay_time = 1400;
@@ -116,19 +112,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       }
     }
     return true;
-  }
-
-  case KC_MY_SCR:
-  {
-    if (record->event.pressed)
-    {
-      state = SCROLLING;
-    }
-    else
-    {
-      enable_click_layer();
-    }
-    return false;
   }
 
   case KC_LALT:
@@ -290,72 +273,24 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
 {
   int16_t current_x = mouse_report.x;
   int16_t current_y = mouse_report.y;
-  int16_t current_h = 0;
-  int16_t current_v = 0;
 
   if (current_x != 0 || current_y != 0)
   {
-
     switch (state)
     {
     case CLICKABLE:
+    {
       click_timer = timer_read();
       break;
+    }
 
     case CLICKING:
-      break;
-
-    case SCROLLING:
     {
-      int8_t rep_v = 0;
-      int8_t rep_h = 0;
-
-      // 垂直スクロールの方の感度を高める。 Increase sensitivity toward vertical scrolling.
-      if (my_abs(current_y) * 2 > my_abs(current_x))
-      {
-
-        scroll_v_mouse_interval_counter += current_y;
-        while (my_abs(scroll_v_mouse_interval_counter) > scroll_v_threshold)
-        {
-          if (scroll_v_mouse_interval_counter < 0)
-          {
-            scroll_v_mouse_interval_counter += scroll_v_threshold;
-            rep_v += scroll_v_threshold;
-          }
-          else
-          {
-            scroll_v_mouse_interval_counter -= scroll_v_threshold;
-            rep_v -= scroll_v_threshold;
-          }
-        }
-      }
-      else
-      {
-
-        scroll_h_mouse_interval_counter += current_x;
-
-        while (my_abs(scroll_h_mouse_interval_counter) > scroll_h_threshold)
-        {
-          if (scroll_h_mouse_interval_counter < 0)
-          {
-            scroll_h_mouse_interval_counter += scroll_h_threshold;
-            rep_h += scroll_h_threshold;
-          }
-          else
-          {
-            scroll_h_mouse_interval_counter -= scroll_h_threshold;
-            rep_h -= scroll_h_threshold;
-          }
-        }
-      }
-
-      current_h = rep_h / scroll_h_threshold;
-      current_v = -rep_v / scroll_v_threshold;
-      current_x = 0;
-      current_y = 0;
+      break;
     }
 
     case WAITING:
+    {
       mouse_movement += my_abs(current_x) + my_abs(current_y);
 
       if (mouse_movement >= to_clickable_movement)
@@ -364,11 +299,14 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
         enable_click_layer();
       }
       break;
+    }
 
     default:
+    {
       click_timer = timer_read();
       state = WAITING;
       mouse_movement = 0;
+    }
     }
   }
   else
@@ -376,34 +314,48 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
     switch (state)
     {
     case CLICKING:
-    case SCROLLING:
+    {
       break;
+    }
 
     case CLICKABLE:
-      if (timer_elapsed(click_timer) > to_reset_time)
+    {
+      if (timer_elapsed(click_timer) > clickable_stay_time)
       {
         disable_click_layer();
       }
       break;
+    }
+
+    case CLICKED:
+    {
+      if (timer_elapsed(click_timer) > clicked_stay_time)
+      {
+        disable_click_layer();
+      }
+      break;
+    }
 
     case WAITING:
+    {
       if (timer_elapsed(click_timer) > 50)
       {
         mouse_movement = 0;
         state = NONE;
       }
       break;
+    }
 
     default:
+    {
       mouse_movement = 0;
       state = NONE;
+    }
     }
   }
 
   mouse_report.x = current_x;
   mouse_report.y = current_y;
-  mouse_report.h = current_h;
-  mouse_report.v = current_v;
 
   return mouse_report;
 }
@@ -433,10 +385,10 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [3] = LAYOUT_universal(
-    _______ , _______ , _______ , _______ , _______  , _______ ,    KC_F9 , KC_F10 , KC_F11 , KC_F12 , _______ , _______ ,
-    _______ , _______ , _______ , _______ , _______  , _______ ,    _______ , _______ , KC_F5 , _______ , _______ , _______ ,
-    _______ , _______ , _______ , _______ , _______  , _______ ,    CPI_D1K  , CPI_D100 , CPI_I100 , CPI_I1K  , _______  , KBC_SAVE ,
-    _______ , _______ , _______  , _______  , _______ ,             _______  , _______  , _______       , KBC_RST  , QK_BOOT
+    _______ , _______ , KC_F7 , KC_F8 , KC_F9 , KC_F10 ,     KC_F9 , KC_F10 , KC_F11 , KC_F12 , _______ , _______ ,
+    _______ , _______ , KC_F4 , KC_F5 , KC_F6 , KC_F11 ,     _______ , _______ , KC_F5 , _______ , _______ , _______ ,
+    KBC_SAVE , _______ , KC_F1 , KC_F2 , KC_F3 , KC_F12 ,    AML_TO , CPI_D100 , KC_F2 , CPI_I100 , KBC_SAVE , KBC_SAVE ,
+    QK_BOOT , _______ , _______  , _______  , _______ ,      _______ , _______  , _______ , _______ , AML_TO
   ),
 
   [4] = LAYOUT_universal(
