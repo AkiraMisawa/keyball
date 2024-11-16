@@ -447,9 +447,6 @@ void oledkit_render_info_user(void)
   case CLICKED:
     oled_write_ln_P(PSTR("  CLICKED"), false);
     break;
-  case SCROLLING:
-    oled_write_ln_P(PSTR("  SCROLLING"), false);
-    break;
   case NONE:
     oled_write_ln_P(PSTR("  NONE"), false);
     break;
