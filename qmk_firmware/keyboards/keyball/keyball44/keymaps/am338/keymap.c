@@ -122,7 +122,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
   }
 
     static bool is_lt1_lang2_pressed = false;
-    static bool is_lt1_lang1_pressed = false;
 
   case LT(1, KC_LNG2):
   {
@@ -148,7 +147,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       is_lt1_pressed = false;
       is_lt1_lang2_pressed = false;
 
-      if (!is_lt1_lang2_pressed && !is_lt1_lang1_pressed)
+      if (!is_lt1_lang2_pressed)
       {
         layer_off(1);
       }
@@ -159,6 +158,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
       else if (is_lt3_pressed)
       {
         layer_on(3);
+      }
+
+      if (timer_elapsed(click_timer) < TAPPING_TERM)
+      {
+          tap_code(KC_LANG2);
       }
 
       if (is_gui_active)
@@ -289,7 +293,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
       break;
     }
 
-    case WAITING:
+    case jjkkkkkjjjjkkjjjjj:
     {
       mouse_movement += my_abs(current_x) + my_abs(current_y);
 
@@ -366,8 +370,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_universal(
     KC_TAB , KC_Q , KC_W , KC_E , KC_R , KC_T ,                     KC_Y, KC_U , KC_I , KC_O , KC_P , KC_BSPC ,
     KC_RCTL , KC_A , KC_S , KC_D , LT(3, KC_F) , KC_G ,             KC_H , LT(3, KC_J) , KC_K , KC_L , KC_SCLN , KC_ENT ,
-    KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_COMM , KC_DOT , KC_MINS , KC_RSFT ,
-    KC_LGUI , KC_LALT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
+    KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_MY_BTN1 , KC_MY_BTN2 , KC_MINS , KC_RSFT ,
+    KC_COMM , KC_DOT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
   ),
 
   [1] = LAYOUT_universal(
@@ -416,7 +420,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 layer_state_t layer_state_set_user(layer_state_t state)
 {
-  keyball_set_scroll_mode(get_highest_layer(state) == 1 || get_highest_layer(state) == 3);
+  keyball_set_scroll_mode(get_highest_layer(state) == 3);
 
   return state;
 }
@@ -427,9 +431,6 @@ layer_state_t layer_state_set_user(layer_state_t state)
 
 void oledkit_render_info_user(void)
 {
-  keyball_oled_render_keyinfo();  // キー情報を表示
-  keyball_oled_render_ballinfo(); // トラックボール情報を表示
-
   oled_write_P(PSTR("Layer:"), false);
   oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
 
