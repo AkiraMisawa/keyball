@@ -293,7 +293,7 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
       break;
     }
 
-    case jjkkkkkjjjjkkjjjjj:
+    case WAITING:
     {
       mouse_movement += my_abs(current_x) + my_abs(current_y);
 
