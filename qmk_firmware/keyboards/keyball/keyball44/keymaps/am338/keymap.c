@@ -162,7 +162,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
       if (timer_elapsed(click_timer) < TAPPING_TERM)
       {
-          tap_code(KC_LANG2);
+          tap_code(keycode);
       }
 
       if (is_gui_active)
