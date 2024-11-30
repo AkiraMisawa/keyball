@@ -25,9 +25,7 @@ enum custom_keycodes
   KC_MY_BTN2,
   KC_MY_BTN3,
   KC_MY_BTN4,
-  KC_MY_BTN5,
-  KC_DOUBLE_CLICK_BTN1,
-  KC_TRIPLE_CLICK_BTN1,
+  KC_MY_BTN5
 };
 
 enum click_state
@@ -93,11 +91,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
   switch (keycode)
   {
-  case KC_MS_BTN1:
-  case KC_MS_BTN2:
-  case KC_MS_BTN3:
-  case KC_MS_BTN4:
-  case KC_MS_BTN5:
+  case KC_MY_BTN1:
+  case KC_MY_BTN2:
+  case KC_MY_BTN3:
+  case KC_MY_BTN4:
+  case KC_MY_BTN5:
   {
     if (click_layer && get_highest_layer(layer_state) == click_layer)
     {
@@ -371,7 +369,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB , KC_Q , KC_W , KC_E , KC_R , KC_T ,                     KC_Y, KC_U , KC_I , KC_O , KC_P , KC_BSPC ,
     KC_RCTL , KC_A , KC_S , KC_D , LT(3, KC_F) , KC_G ,             KC_H , LT(3, KC_J) , KC_K , KC_L , KC_SCLN , KC_ENT ,
     KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_MY_BTN1 , KC_MY_BTN2 , KC_MINS , KC_RSFT ,
-    KC_COMM , KC_DOT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
+    KC_LGUI , KC_LALT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
   ),
 
   [1] = LAYOUT_universal(
@@ -410,7 +408,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [6] = LAYOUT_universal(
-    AML_TO , _______ , _______ , _______ , _______ , _______ ,     _______ , KC_DOUBLE_CLICK_BTN1 , KC_TRIPLE_CLICK_BTN1 , _______ , _______ , _______ ,
+    AML_TO , _______ , _______ , _______ , _______ , _______ ,     _______ , _______ , _______ , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MY_BTN4 , KC_MY_BTN1 , KC_MY_BTN3 , KC_MY_BTN2 , KC_MY_BTN5 , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , _______ , _______ , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
@@ -431,6 +429,9 @@ layer_state_t layer_state_set_user(layer_state_t state)
 
 void oledkit_render_info_user(void)
 {
+  keyball_oled_render_keyinfo();
+  keyball_oled_render_ballinfo();
+
   oled_write_P(PSTR("Layer:"), false);
   oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
 
