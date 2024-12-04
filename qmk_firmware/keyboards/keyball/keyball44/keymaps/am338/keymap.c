@@ -91,13 +91,13 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
   switch (keycode)
   {
-  case KC_MY_BTN1:
-  case KC_MY_BTN2:
-  case KC_MY_BTN3:
-  case KC_MY_BTN4:
-  case KC_MY_BTN5:
+  case KC_MS_BTN1:
+  case KC_MS_BTN2:
+  case KC_MS_BTN3:
+  case KC_MS_BTN4:
+  case KC_MS_BTN5:
   {
-    if (click_layer && get_highest_layer(layer_state) == click_layer)
+    if (get_highest_layer(layer_state) == click_layer)
     {
       if (record->event.pressed)
       {
@@ -280,17 +280,6 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   {
     switch (state)
     {
-    case CLICKABLE:
-    {
-      click_timer = timer_read();
-      break;
-    }
-
-    case CLICKING:
-    {
-      break;
-    }
-
     case WAITING:
     {
       mouse_movement += my_abs(current_x) + my_abs(current_y);
@@ -300,6 +289,17 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
         mouse_movement = 0;
         enable_click_layer();
       }
+      break;
+    }
+
+    case CLICKABLE:
+    {
+      click_timer = timer_read();
+      break;
+    }
+
+    case CLICKING:
+    {
       break;
     }
 
@@ -315,6 +315,16 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
   {
     switch (state)
     {
+    case WAITING:
+    {
+      if (timer_elapsed(click_timer) > 50)
+      {
+        mouse_movement = 0;
+        state = NONE;
+      }
+      break;
+    }
+
     case CLICKING:
     {
       break;
@@ -334,16 +344,6 @@ report_mouse_t pointing_device_task_user(report_mouse_t mouse_report)
       if (timer_elapsed(click_timer) > clicked_stay_time)
       {
         disable_click_layer();
-      }
-      break;
-    }
-
-    case WAITING:
-    {
-      if (timer_elapsed(click_timer) > 50)
-      {
-        mouse_movement = 0;
-        state = NONE;
       }
       break;
     }
@@ -368,29 +368,29 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   [0] = LAYOUT_universal(
     KC_TAB , KC_Q , KC_W , KC_E , KC_R , KC_T ,                     KC_Y, KC_U , KC_I , KC_O , KC_P , KC_BSPC ,
     KC_RCTL , KC_A , KC_S , KC_D , LT(3, KC_F) , KC_G ,             KC_H , LT(3, KC_J) , KC_K , KC_L , KC_SCLN , KC_ENT ,
-    KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_MY_BTN1 , KC_MY_BTN2 , KC_MINS , KC_RSFT ,
+    KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_COMMA , KC_DOT , KC_MINS , KC_RSFT ,
     KC_LGUI , KC_LALT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
   ),
 
   [1] = LAYOUT_universal(
-    KC_TAB , LSFT(KC_5) , LSFT(KC_4) , LSFT(KC_7) , LSFT(KC_6) , KC_SLSH ,          LSFT(KC_NUBS) , LSFT(KC_9) , LSFT(KC_0) , LSFT(KC_COMM) , LSFT(KC_DOT) , KC_BSPC ,
-    KC_RCTL , LSFT(KC_QUOT) , KC_NUHS , LSFT(KC_8) , LSFT(KC_EQL) , KC_EQL ,        LSFT(KC_MINS) , LSFT(KC_LBRC) , LSFT(KC_RBRC) , KC_SCLN , LSFT(KC_SCLN) , KC_ENT ,
-    KC_LSFT , KC_GRV , LSFT(KC_NUHS) , LSFT(KC_3) , LSFT(KC_1) , LSFT(KC_SLSH) ,    KC_NUBS , KC_LBRC , KC_RBRC , KC_QUOT , LSFT(KC_2) , KC_RSFT ,
-    _______ , _______ , _______ , _______ , _______ ,                               KC_DEL , _______ , _______ , _______ , _______
+    KC_TAB , LSFT(KC_5) , LSFT(KC_4) , LSFT(KC_7) , LSFT(KC_6) , KC_SLSH ,     KC_PIPE , LSFT(KC_9) , LSFT(KC_0) , LSFT(KC_COMM) , LSFT(KC_DOT) , KC_BSPC ,
+    KC_RCTL , KC_AT , KC_HASH , LSFT(KC_8) , LSFT(KC_EQL) , KC_EQL ,           LSFT(KC_MINS) , LSFT(KC_LBRC) , LSFT(KC_RBRC) , KC_SCLN , LSFT(KC_SCLN) , KC_ENT ,
+    KC_LSFT , KC_GRV , KC_TILDE , LSFT(KC_3) , LSFT(KC_1) , LSFT(KC_SLSH) ,    KC_BACKSLASH , KC_LBRC , KC_RBRC , KC_QUOT , KC_DOUBLE_QUOTE , KC_RSFT ,
+    _______ , _______ , _______ , _______ , _______ ,                          KC_DEL , _______ , _______ , _______ , _______
   ),
 
   [2] = LAYOUT_universal(
     KC_TAB , _______ , KC_7 , KC_8 , KC_9 , _______ ,    KC_INS  , KC_HOME , KC_UP , KC_END , _______ , KC_BSPC ,
     KC_RCTL , _______ , KC_4 , KC_5 , KC_6 , KC_0  ,     KC_PGUP , KC_LEFT , KC_DOWN , KC_RIGHT , KC_PGDN , KC_ENT ,
     KC_LSFT , KC_0 , KC_1 , KC_2 , KC_3 , KC_0 ,         _______  , _______ , _______ , _______ , _______ , KC_RSFT ,
-    _______ , _______ , _______ , _______ , _______ ,    KC_DEL , _______ , _______ , _______  , _______
+    _______ , _______ , KC_LNG1 , _______ , _______ ,    KC_DEL , _______ , _______ , _______  , _______
   ),
 
   [3] = LAYOUT_universal(
     _______ , _______ , KC_F7 , KC_F8 , KC_F9 , KC_F10 ,     KC_F9 , KC_F10 , KC_F11 , KC_F12 , _______ , _______ ,
     _______ , _______ , KC_F4 , KC_F5 , KC_F6 , KC_F11 ,     _______ , _______ , KC_F5 , _______ , _______ , _______ ,
-    KBC_SAVE , _______ , KC_F1 , KC_F2 , KC_F3 , KC_F12 ,    AML_TO , CPI_D100 , KC_F2 , CPI_I100 , KBC_SAVE , KBC_SAVE ,
-    QK_BOOT , _______ , _______  , _______  , _______ ,      _______ , _______  , _______ , _______ , AML_TO
+    KBC_SAVE , _______ , KC_F1 , KC_F2 , KC_F3 , KC_F12 ,    _______, CPI_D100 , KC_F2 , CPI_I100 , KBC_SAVE , KBC_SAVE ,
+    QK_BOOT , _______ , KC_LNG1  , _______  , _______ ,      _______ , _______  , _______ , _______ , _______
   ),
 
   [4] = LAYOUT_universal(
@@ -408,8 +408,8 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   ),
 
   [6] = LAYOUT_universal(
-    AML_TO , _______ , _______ , _______ , _______ , _______ ,     _______ , _______ , _______ , _______ , _______ , _______ ,
-    _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MY_BTN4 , KC_MY_BTN1 , KC_MY_BTN3 , KC_MY_BTN2 , KC_MY_BTN5 , _______ ,
+    _______ , _______ , _______ , _______ , _______ , _______ ,     _______ , _______ , _______ , _______ , _______ , _______ ,
+    _______ , _______ , _______ , _______ , _______ , _______ ,    KC_MS_BTN4 , KC_MS_BTN1 , KC_MS_BTN3 , KC_MS_BTN2 , KC_MS_BTN5 , _______ ,
     _______ , _______ , _______ , _______ , _______ , _______ ,    _______ , _______ , _______ , _______ , _______ , _______ ,
     _______ , _______ , _______ , _______ , _______ ,              _______ , _______ , _______ , _______ , _______
   )
