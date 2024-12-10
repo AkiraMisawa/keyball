@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "drivers/pmw3360/pmw3360.h"
 
 #include <string.h>
+#include "os_detection.h"
 
 const uint8_t CPI_DEFAULT    = KEYBALL_CPI_DEFAULT / 100;
 const uint8_t CPI_MAX        = pmw3360_MAXCPI + 1;
@@ -234,6 +235,13 @@ __attribute__((weak)) void keyball_on_apply_motion_to_mouse_scroll(keyball_motio
             break;
     }
 #endif
+
+    if (keyball_get_scroll_reverse_mode() & KEYBALL_SCROLL_REVERSE_VERTICAL) {
+        r->v = -r->v;
+    }
+    if (keyball_get_scroll_reverse_mode() & KEYBALL_SCROLL_REVERSE_HORIZONTAL) {
+        r->h = -r->h;
+    }
 }
 
 static void motion_to_mouse(keyball_motion_t *m, report_mouse_t *r, bool is_left, bool as_scroll) {
@@ -519,11 +527,21 @@ bool keyball_get_scroll_mode(void) {
     return keyball.scroll_mode;
 }
 
+uint8_t keyball_get_scroll_reverse_mode(void) {
+    return keyball.scroll_reverse_mode;
+}
+
 void keyball_set_scroll_mode(bool mode) {
     if (mode != keyball.scroll_mode) {
         keyball.scroll_mode_changed = timer_read32();
     }
     keyball.scroll_mode = mode;
+}
+
+void keyball_set_scroll_reverse_mode(uint8_t mode) {
+    if (mode <= (KEYBALL_SCROLL_REVERSE_VERTICAL | KEYBALL_SCROLL_REVERSE_HORIZONTAL)) {
+        keyball.scroll_reverse_mode = mode;
+    }
 }
 
 keyball_scrollsnap_mode_t keyball_get_scrollsnap_mode(void) {
@@ -662,6 +680,23 @@ bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
             // to apply QK_MODS actions, allow to process others.
             return true;
         }
+#else
+    case KC_MS_WH_UP:
+    case KC_MS_WH_DOWN:
+        if (keyball_get_scroll_reverse_mode() & KEYBALL_SCROLL_REVERSE_VERTICAL) {
+            extern void register_mouse(uint8_t mouse_keycode, bool pressed);
+            register_mouse(keycode == KC_MS_WH_UP ? KC_MS_WH_DOWN : KC_MS_WH_UP, record->event.pressed);
+            return false;
+        }
+        break;
+    case KC_MS_WH_LEFT:
+    case KC_MS_WH_RIGHT:
+        if (keyball_get_scroll_reverse_mode() & KEYBALL_SCROLL_REVERSE_HORIZONTAL) {
+            extern void register_mouse(uint8_t mouse_keycode, bool pressed);
+            register_mouse(keycode == KC_MS_WH_LEFT ? KC_MS_WH_RIGHT : KC_MS_WH_LEFT, record->event.pressed);
+            return false;
+        }
+        break;
 #endif
 
         case SCRL_MO:
@@ -780,3 +815,43 @@ uint8_t mod_config(uint8_t mod) {
 }
 
 #endif
+
+#if defined(OS_DETECTION_ENABLE) && defined(DEFERRED_EXEC_ENABLE)
+uint32_t os_detect_callback(uint32_t trigger_time, void *cb_arg) {
+#if defined(MAGIC_KEYCODE_ENABLE) || defined(KEYBALL_KEEP_MAGIC_FUNCTIONS)
+    keymap_config.raw = eeconfig_read_keymap();
+#endif
+    switch (detected_host_os()) {
+    case OS_WINDOWS: {
+        uint8_t mode = 0;
+        keyball_set_scroll_reverse_mode(mode);
+#if defined(MAGIC_KEYCODE_ENABLE) || defined(KEYBALL_KEEP_MAGIC_FUNCTIONS)
+        keymap_config.swap_lalt_lgui = true;
+        keymap_config.swap_ralt_rgui = false;
+#endif
+        break;
+    }
+    case OS_MACOS: {
+        uint8_t mode = KEYBALL_SCROLL_REVERSE_VERTICAL | KEYBALL_SCROLL_REVERSE_HORIZONTAL;
+        keyball_set_scroll_reverse_mode(mode);
+#if defined(MAGIC_KEYCODE_ENABLE) || defined(KEYBALL_KEEP_MAGIC_FUNCTIONS)
+        keymap_config.swap_lalt_lgui = false;
+        keymap_config.swap_ralt_rgui = true;
+#endif
+        break;
+    }
+    default:
+        break;
+    }
+#if defined(MAGIC_KEYCODE_ENABLE) || defined(KEYBALL_KEEP_MAGIC_FUNCTIONS)
+    eeconfig_update_keymap(keymap_config.raw);
+#endif
+    return 0;
+}
+#endif
+
+void keyboard_post_init_user(void) {
+#if defined(OS_DETECTION_ENABLE) && defined(DEFERRED_EXEC_ENABLE)
+    defer_exec(100, os_detect_callback, NULL);
+#endif
+}

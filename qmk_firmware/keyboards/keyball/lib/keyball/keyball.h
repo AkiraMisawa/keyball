@@ -164,6 +164,7 @@ typedef struct {
 
     bool     scroll_mode;
     uint32_t scroll_mode_changed;
+    uint8_t  scroll_reverse_mode;
     uint8_t  scroll_div;
 
 #if KEYBALL_SCROLLSNAP_ENABLE == 1
@@ -187,6 +188,10 @@ typedef enum {
     KEYBALL_ADJUST_SECONDARY = 2,
 } keyball_adjust_t;
 
+enum {
+    KEYBALL_SCROLL_REVERSE_VERTICAL   = 1,
+    KEYBALL_SCROLL_REVERSE_HORIZONTAL = 2,
+};
 //////////////////////////////////////////////////////////////////////////////
 // Exported values (touch carefully)
 
@@ -227,8 +232,17 @@ void keyball_oled_render_layerinfo(void);
 /// keyball_get_scroll_mode gets current scroll mode.
 bool keyball_get_scroll_mode(void);
 
+/// keyball_get_scroll_reverse_mode gets current scroll directions.
+/// See also keyball_set_scroll_reverse_mode for the detail.
+uint8_t keyball_get_scroll_reverse_mode(void);
+
 /// keyball_set_scroll_mode modify scroll mode.
 void keyball_set_scroll_mode(bool mode);
+
+/// keyball_set_scroll_reverse_mode changes scroll directions.
+/// The directions are described by the mode which is composition of the flags
+/// KEYBALL_SCROLL_REVERSE_VERTICAL and KEYBALL_SCROLL_REVERSE_HORIZONTAL.
+void keyball_set_scroll_reverse_mode(uint8_t mode);
 
 /// keyball_get_scrollsnap_mode gets current scroll snap mode.
 keyball_scrollsnap_mode_t keyball_get_scrollsnap_mode(void);

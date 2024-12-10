@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include QMK_KEYBOARD_H
 #include "quantum.h"
+#include "os_detection.h"
 
 enum custom_keycodes
 {
@@ -160,7 +161,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
       if (timer_elapsed(click_timer) < TAPPING_TERM)
       {
-          tap_code(keycode);
+        tap_code(keycode);
       }
 
       if (is_gui_active)
@@ -206,7 +207,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record)
 
       if (timer_elapsed(click_timer) < TAPPING_TERM)
       {
-          tap_code(keycode);
+        tap_code(keycode);
       }
     }
     return false;
@@ -369,7 +370,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     KC_TAB , KC_Q , KC_W , KC_E , KC_R , KC_T ,                     KC_Y, KC_U , KC_I , KC_O , KC_P , KC_BSPC ,
     KC_RCTL , KC_A , KC_S , KC_D , LT(3, KC_F) , KC_G ,             KC_H , LT(3, KC_J) , KC_K , KC_L , KC_SCLN , KC_ENT ,
     KC_LSFT , KC_Z , KC_X , KC_C , KC_V , KC_B ,                    KC_N , KC_M , KC_COMMA , KC_DOT , KC_MINS , KC_RSFT ,
-    KC_LGUI , KC_LALT , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
+    KC_LALT , KC_LGUI , LT(1, KC_LNG2) , LT(2, KC_SPC), KC_LSFT,    KC_BSPC , KC_ENT , _______ , _______ , LT(3, KC_ESC)
   ),
 
   [1] = LAYOUT_universal(
@@ -388,7 +389,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
   [3] = LAYOUT_universal(
     _______ , _______ , KC_F7 , KC_F8 , KC_F9 , KC_F10 ,     KC_F9 , KC_F10 , KC_F11 , KC_F12 , _______ , _______ ,
-    _______ , _______ , KC_F4 , KC_F5 , KC_F6 , KC_F11 ,     _______ , _______ , KC_F5 , _______ , _______ , _______ ,
+    _______ , _______ , KC_F4 , KC_F5 , KC_F6 , KC_F11 ,     _______ , SCRL_DVI , KC_F5 , SCRL_DVD , _______ , _______ ,
     KBC_SAVE , _______ , KC_F1 , KC_F2 , KC_F3 , KC_F12 ,    _______, CPI_D100 , KC_F2 , CPI_I100 , KBC_SAVE , KBC_SAVE ,
     QK_BOOT , _______ , KC_LNG1  , _______  , _______ ,      _______ , _______  , _______ , _______ , _______
   ),
@@ -432,27 +433,25 @@ void oledkit_render_info_user(void)
   keyball_oled_render_keyinfo();
   keyball_oled_render_ballinfo();
 
-  oled_write_P(PSTR("Layer:"), false);
-  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
-
-  switch (state)
+  oled_write_P(PSTR("OS:"), false);
+  switch (detected_host_os())
   {
-  case WAITING:
-    oled_write_ln_P(PSTR("  WAITING"), false);
-    break;
-  case CLICKABLE:
-    oled_write_ln_P(PSTR("  CLICKABLE"), false);
-    break;
-  case CLICKING:
-    oled_write_ln_P(PSTR("  CLICKING"), false);
-    break;
-  case CLICKED:
-    oled_write_ln_P(PSTR("  CLICKED"), false);
-    break;
-  case NONE:
-    oled_write_ln_P(PSTR("  NONE"), false);
+  case OS_WINDOWS:
+  {
+    oled_write_P(PSTR(" Win  "), false);
     break;
   }
+  case OS_MACOS:
+  {
+    oled_write_P(PSTR(" Mac  "), false);
+    break;
+  }
+  default:
+    oled_write_P(PSTR("NA  "), false);
+    break;
+  }
+  oled_write_P(PSTR("Layer:"), false);
+  oled_write(get_u8_str(get_highest_layer(layer_state), ' '), false);
 }
 
 #endif

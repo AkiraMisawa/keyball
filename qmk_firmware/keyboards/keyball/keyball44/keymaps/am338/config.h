@@ -25,3 +25,5 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define KEYBALL_CPI_DEFAULT 700
 #define KEYBALL_SCROLL_DIV_DEFAULT 4
+
+#define KEYBALL_KEEP_MAGIC_FUNCTIONS
