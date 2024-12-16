@@ -102,6 +102,7 @@ enum keyball_keycodes {
     // wheel.
     SCRL_TO  = QK_KB_6, // Toggle scroll mode
     SCRL_MO  = QK_KB_7, // Momentary scroll mode
+    SCRL_MO_HOR  = QK_KB_16, // Momentary scroll mode(Horizontal)
     SCRL_DVI = QK_KB_8, // Increment scroll divider
     SCRL_DVD = QK_KB_9, // Decrement scroll divider
 
